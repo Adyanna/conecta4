@@ -1,5 +1,6 @@
 from .list_utils import *
 from .settings import *
+from .oracle import ColumnClassification,ColumnRecommendation
 
 
 #test de 
@@ -16,3 +17,10 @@ def test_find_streak():
 def test_get_nths():
     original = [[0, 7, 3], [4, 0, 1]]
     assert get_nths(original,1) == [0, 4]
+
+def test_all_same():
+    assert all_same([1,2,3,4])==False
+    assert all_same([[],[],[]])
+    assert all_same([])
+    assert all_same([ColumnRecommendation(0,ColumnClassification.WIN),ColumnRecommendation(2,ColumnClassification.WIN)])
+    assert all_same([ColumnRecommendation(0,ColumnClassification.MAYBE),ColumnRecommendation(2,ColumnClassification.WIN)]) == False

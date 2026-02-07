@@ -6,7 +6,10 @@
 
 #if TYPE_CHECKING:
 from .board import Board
-from .oracle import *
+from .oracle import BaseOracle,ColumnRecommendation,ColumnClassification
+from random import choice
+from .list_utils import all_same,is_int
+
 class Player:
     """
     Representa un jugador, con un nombre y un caracter (con el que juega)
@@ -20,6 +23,7 @@ class Player:
 
     @property
     def opponent(self):
+         
          return self._opponent
     
     #tener cuidado de no utilizar el mismo, se crean bucles infinitos
@@ -31,7 +35,9 @@ class Player:
 
     #AQUI JUEGA LA MAQUINA
     def playmachine(self,board:Board):
-    
+        """
+        Obtenemos la recomendacion del oraculo para posteriomente realizar la jugada de la maquina 
+        """
         #pregunto al oraculo
         (best,recommendations) = self._ask_oracle(board)
         #juego en la mejor 
@@ -53,16 +59,22 @@ class Player:
         
 
     def _choose(self,recommendations: "ColumnRecommendation"):
-        
-        #selecciona la mejor opcion de la lista de recomendaciones
+        """
+         selecciona la mejor opcion de la lista de recomendaciones
+        """
+        val = None
         lbest = list(filter(lambda x: x.classification != ColumnClassification.FULL, recommendations))
-        return lbest[0]
+        #ordenamos por el orden decreciente
+        lbest = sorted(lbest,key=lambda x:x.classification,reverse=True)
+        if all_same(lbest):
+             val = choice(lbest)
+        else:
+             val = lbest[0]
+        return val
     
-    #AQUI JUEGA EL PLAYER HUMANO
-
-    
+#AQUI JUEGA EL PLAYER HUMANO
 class HumanPlayer(Player):
-    
+
     def __init__(self, name, char=None):
         super().__init__(name, char)
 
@@ -74,17 +86,7 @@ class HumanPlayer(Player):
             #pedido la columna
             val = input("Select a column: \n")
             #verificaod que su respuesta cumpla las condiciones
-            if _is_int(val):
+            if is_int(val):
                 #si no los es,jugamos
                 pos = int(val)
                 return (ColumnRecommendation(pos,None),None)
-
-        
-
-#VALIDAMOS QUE UNA CADENA SEA UN NUMERO VALIDO
-def _is_int(data):
-    try:
-            num = int(data)
-            return True
-    except:
-            return False

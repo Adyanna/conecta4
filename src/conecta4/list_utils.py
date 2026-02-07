@@ -3,11 +3,7 @@ from typing import Any
 
 def find_streak(haystack, needle, streak):
   """
-  Docstring for find_streak
-  
-  :param haystack: Description
-  :param needle: Description
-  :param streak: Description
+  Encuentra un racha de 
   """
   assert streak>0
   contador=0
@@ -79,8 +75,22 @@ def reverse_matrix(lol:list[list]):
     m.append(reverse_list(list_))
   return m
 
-    
+def all_same(lol:list):
+  same=True
+  if lol!=[]:
+    aux = lol[0]      
+    for val in lol:
+      if aux!=val:
+        same=False
+        break
+  return same
 
+#VALIDAMOS QUE UNA CADENA SEA UN NUMERO VALIDO
+def is_int(data):
+    try:
+            num = int(data)
+            return True
+    except:
+            return False
 
-    
 
