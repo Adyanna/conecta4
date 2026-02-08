@@ -65,3 +65,17 @@ def test_is_losing_move():
     oracle._is_losing_move(almost,2,winner)==False 
     oracle._is_losing_move(almost,3,winner) 
 
+def test_no_good_option():
+    p1 = Player("Adr",char="x")
+    p2 = Player("Otto",char="o",opponent=p1)
+
+    oracle = SmartOracle()
+    maybe = Board.fromBoardRawCode('....|o...|....|....')
+    bad_and_full = Board.fromBoardRawCode('x...|oo..|o...|xoxo')
+    all_bad = Board.fromBoardRawCode('x...|oo..|o...|....')
+
+    #ESTA MAL
+    assert oracle.no_good_option(maybe,p1) == False
+    assert oracle.no_good_option(bad_and_full,p1)
+    #No funciona
+    assert oracle.no_good_option(all_bad,p1)

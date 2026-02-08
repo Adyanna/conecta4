@@ -16,7 +16,7 @@ def test_play():
     #print(after)
 
 
-    matriz = player.playmachine(before)
+    matriz = player.play(before)
     print(matriz)
     #print(before._columns)
     #assert before==after #NO FUNCION

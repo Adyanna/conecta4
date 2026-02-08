@@ -32,5 +32,22 @@ class Match:
 
         return result
 
+    def is_math_over(self):
+        """
+        Pregunta al usuario si quiere otra partida
+        """
+        resp = True
+        while resp:
+            answer = input("Would you like another match? (Y/N): \n").upper()
+            if answer =='Y':
+                resp = False
+                break
+            elif answer == 'N':
+                resp = True
+                print("See you later, have a good day!")
+                break
+        return resp
+    
+
 
 

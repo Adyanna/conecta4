@@ -92,5 +92,55 @@ def is_int(data):
             return True
     except:
             return False
+    
+def collapse_list(list_:list[str|None],empty='.')->str:
+    """
+    Concatena todas las cedenas de la lista en una sola lista
+    """
+    val=""
+    for char in list_:
+        val += empty if char==None else char
+
+    return val
+
+def collapse_matrix(lol:list[list[str|None]], fence='|',empty='.')->str:
+    """
+    Concatena todas las cadenas en una sola separada por |
+    """
+    val=""
+    for list_ in lol:
+        val += collapse_list(list_,empty)+fence
+
+    return val[:-1]
+
+def explode_string(string_:str,dot=None):
+   """
+   Tranforma una cadena en una lista de caracteres
+   """
+   return list(string_)
+
+def explode_list_of_string(list_of_string,dot=None):
+    """
+    Aplica explode_strign a cada cadena de la lista
+    """
+    result=[]
+    for char in list_of_string:
+        result.append(explode_string(char))
+    return result
+
+def replace_all_in_list(list_,char1,tochar2):
+    new=[]
+    for char in list_:
+        new.append(tochar2 if char == char1 else char)
+    return new
+      
+def replace_all_in_matriz(lol,char1, tochar2):
+    new=[]
+    for list_ in lol:
+      new.append(replace_all_in_list(list_,char1,tochar2))
+    return new
+
+
+      
 
 

@@ -1,5 +1,5 @@
 from conecta4.settings import BOARD_COLUMNS, BOARD_ROWS, VICTORY_STREAK
-from .list_utils import find_streak,tranpose_matriz,extend_lol,reverse_matrix
+from .list_utils import find_streak,tranpose_matriz,extend_lol,reverse_matrix,collapse_matrix,explode_list_of_string,replace_all_in_matriz
 from copy import deepcopy
 
 
@@ -7,7 +7,7 @@ type MatrixColumn = list[list[str|None]]
 
 class Board:
     """
-    Representa un tablero con las dumensiones de settings
+    Representa un tablero con las dimensiones de settings
     detecta una victoria
     """
 
@@ -17,7 +17,24 @@ class Board:
         board = cls()
         board._columns = deepcopy(list_repr)
         return board
-
+    
+    @classmethod
+    def fromBoardCode(cls,boardcode):
+        return cls.fromBoardRawCode(boardcode.raw_code)
+    
+    @classmethod
+    def fromBoardRawCode(cls,board_raw_code):
+        """
+        Transforma una cadena en formato de boardCode
+        """
+        #convertir la cadena del codigo en una lista de cadenas se le denomina TOKENIZAR
+        listofstring= board_raw_code.split('|')
+        #tranformar cada cadena en una lista de caracteres
+        matrix = explode_list_of_string(listofstring) 
+        #cambiamos todos los puntos por None
+        matrix = replace_all_in_matriz(matrix,'.',None)
+        return cls.from_list(matrix)
+        
     #DUNDERS
     def __init__(self)-> None:
         """
@@ -27,16 +44,7 @@ class Board:
         """
         #self.columns = [[None]*BOARD_ROWS]*BOARD_COLUMNS  #bugggggg\
         self._columns: list[list[str|None]] = []
-
         self._columns = [[None for i in range(BOARD_COLUMNS)] for j in range(BOARD_ROWS)]
-        #iniciar un for 
-        """
-        for col_num in range(BOARD_COLUMNS): #Columna
-            self._columns.append([])
-            for row_num in range(BOARD_ROWS): #Fila
-                self._columns[col_num].append(None)
-        """
-        #for column_row in 
 
     #DOS OBJETOS EQUIVALENTES, TIENE QUE TENER EL MISMO HASH
     def __eq__(self, value: object)->bool:
@@ -91,9 +99,9 @@ class Board:
                     break
             if not found_slot:
                 #Valida si la columna esta vacia
-                raise ValueError(f"La columna {col_numer}, esta llena!")
+                raise ValueError(f"Column {col_numer}, is full!")
         except IndexError:
-            raise ValueError(f"{col_numer} no es valida")
+            raise ValueError(f"Column {col_numer}, is invalid!")
   
 
     def is_victory(self,player_chat:str)->bool:
@@ -115,11 +123,12 @@ class Board:
 
         return result
     
+    def as_code(self):
+        return BoardCode(self)
+    
 
     #interfaz privada
     #estos son funciones que nadie mas puede tener y se representan con "_" guion bajo
-
-    #tarea
     def _has_vertical_victory(self,player_char:str,Matriz:list[list[str|None]])->bool:
         result =  False
         for column in Matriz:
@@ -145,3 +154,29 @@ class Board:
         return self._has_vertical_victory(player_char,tranpose_matriz(extend_lol(temporal._columns,None)))
     
 
+class BoardCode(Board):
+
+    def __init__(self,board:Board):
+        self._raw_code = collapse_matrix(board._columns)
+
+    @property
+    def raw_code(self):
+        return self._raw_code
+    
+    def __eq__(self, other):
+
+        if not isinstance(other, self.__class__):
+            return False
+        else:
+            return self.raw_code == other.raw_code
+        
+    def  __hash__(self):
+        return hash(self.raw_code)
+    
+    def __repr__(self):
+        return f"{self.__class__}: {self.raw_code}"
+
+    
+
+        
+    

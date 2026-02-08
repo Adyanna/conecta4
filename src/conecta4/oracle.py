@@ -1,8 +1,9 @@
 from enum import Enum, auto
-from .board import Board
+from .board import Board,BoardCode
 from .player import *
 from .settings import BOARD_ROWS,BOARD_COLUMNS
 from copy import deepcopy
+from .move import Move
 
 class ColumnClassification:
     FULL = -1 # Imposible
@@ -50,6 +51,27 @@ class BaseOracle:
             recommendations.append(self._get_column_recommendation(board,index,player))
         return recommendations
     
+    def no_good_option (self,board:Board,player:"Player"):
+        """
+        Detecta que todas las clasificaciones sean BAD o FULL
+        """
+        ColumnRecommendation = self.get_recommendation(board,player)
+        result = True
+        for rec in ColumnRecommendation:
+            if (rec.classification == ColumnClassification.WIN) or (rec.classification == ColumnClassification.MAYBE):
+                result = False
+                break
+        return result
+    
+    #se anadie para que todos los oraculos tengan los mismo metodos
+    #con el fin que si alguno necesita algo en especifico, como LearningOracle en este caso
+    #pueda sobreescribirlo y no se tenga que anadir codigo para poder identificar el tipo de oraculo
+    def update_to_bad(self, move: Move):
+        pass
+    def backtrack(self, list_of_moves:Move):
+        pass
+
+    
     # metodo privado
     def _get_column_recommendation(self, board: Board,index:int,player: "Player")-> ColumnRecommendation:
         """
@@ -57,23 +79,22 @@ class BaseOracle:
         para todo lo demas, MAYBE.
         """
         result = ColumnRecommendation(index,ColumnClassification.MAYBE)
-
+        #print(result)
         #comprueba si me he equivocado y si es asi, cambio el valor de result 
         if board.is_column_full(index):
             result = ColumnRecommendation(index,ColumnClassification.FULL)
         return result
-
-
+    
 class SmartOracle(BaseOracle):
     """
     Refina la reomendacion del oraculo base, intentando afinar la clasificacion, MAYBE a algo mas preciso.
     En concreto a WIN: va a determinar que jugadas nos llevan a ganar de inmediato
     """
-    def get_column_recommendation(self, board:Board, index: int, player: "Player")-> ColumnRecommendation:
+    def _get_column_recommendation(self, board:Board, index: int, player: "Player")-> ColumnRecommendation:
 
         #pido la clasificacion basica
         recommendation = super()._get_column_recommendation(board, index, player)
-       
+        
         # afino los Maybe: juego como player en esa ccolumna y compruebo si eso me da una victoria 
         if recommendation.classification == ColumnClassification.MAYBE:
             # le pregunto al tablero temporal si is_victory(player)
@@ -113,5 +134,53 @@ class SmartOracle(BaseOracle):
                 will_lose = True
                 break
         return will_lose
+    
+class MemoizinOracle(SmartOracle):
+    """
+    El metodo get_recommedation, esta ahora memoizado, en donde cada vez que la llama, se guardan los parametros y el resultado
+    en un diccionary
+    """
+    def __init__(self)->None:
+        super().__init__()
+        self._past_recommendations={}
 
-        
+    def _make_key(self,board:BoardCode,player:"Player"):
+        """
+        La clave convina el board y el player de la forma mas sensilla posible
+        """
+        return f"{board.raw_code}@{player.char}"
+
+    def get_recommendation(self, board:Board, player:"Player"):
+        """
+        crea una clave y busca en las recomendaciones pasadas, caso contracion lo guarda en el diccionario
+        """
+        key = self._make_key(board.as_code(),player)
+        if key not in self._past_recommendations:
+            self._past_recommendations[key]=super().get_recommendation(board, player)
+        return self._past_recommendations[key]
+    
+class LearningOracle(MemoizinOracle):
+
+    def update_to_bad(self, move: Move):
+        """
+        Cambiamos la recomendacion de Maybe a Bad y se almacena en el diccionario
+        """
+        key = self._make_key(move.board_code,move.player)
+        recommendation = self.get_recommendation(Board.fromBoardCode(move.board_code),move.player)
+        recommendation[move.position] = ColumnRecommendation(move.position,ColumnClassification.BAD)
+        self._past_recommendations[key] = recommendation
+    
+    def backtrack(self, list_of_moves: Move):
+        """
+        Repasa todas las jugadas y si encuentra una en la cual todo estaba perdido, se tiene que actualizar
+        la anterior a BAD
+        """
+        #  NO ME FUNCIONA NO IMPRIME
+        print("Learning... =D")
+        for move in list_of_moves:
+            self.update_to_bad(move)
+            board = Board.fromBoardCode(move.board_code)
+            if not self.no_good_option(board,move.player):
+                break
+        print(f"Size of knowledgebase: {len(self._past_recommendations)}")
+

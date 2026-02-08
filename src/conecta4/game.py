@@ -6,7 +6,7 @@ from .board import Board
 from .list_utils import reverse_matrix
 from beautifultable import BeautifulTable
 from .settings import BOARD_COLUMNS
-from .oracle import SmartOracle,BaseOracle
+from .oracle import SmartOracle,BaseOracle,LearningOracle
 
 class RoundType(Enum):
     COMPUTER_VS_COMPUTER=auto()
@@ -77,10 +77,10 @@ class Game:
         """
         Player 1 siempre sera robotico, asignamos la dificultad del juego.
         """
-        _levels = {DifficultyLevel.LOW: BaseOracle(),DifficultyLevel.MEDIUM:SmartOracle(),DifficultyLevel.HARD:SmartOracle()}
+        _levels = {DifficultyLevel.LOW: BaseOracle(),DifficultyLevel.MEDIUM:SmartOracle(),DifficultyLevel.HARD:LearningOracle()}
         if self.round_type == RoundType.COMPUTER_VS_COMPUTER:
-            player1=Player("T-1000",oracle=SmartOracle())
-            player2=Player("T-800",oracle=SmartOracle())
+            player1=Player("T-1000",oracle=LearningOracle())
+            player2=Player("T-800",oracle=LearningOracle())
         else:
            player1=Player("T-3000",oracle=_levels[self._difficulty_level])
            player2= HumanPlayer(name=input('Enter your name: \n'))
@@ -94,25 +94,30 @@ class Game:
         while True:
             #pedir el juego al jugador de turno
             current_player=self.match.next_player
-            current_player.playmachine(self.board)
+
+            current_player.play(self.board)
             #mostrar su jugada
             self.display_move(current_player)
             #imprimo el tablero
-            self.display_board()
+            self._display_board()
             #si el juego termino
-            if self._is_game_over():
+            if self._has_winner_or_tie():
                 #mostrar resultado final
-                self.display_result()
+                self._display_result()
                 #salgo del ducle
-                break
+                if self.match.is_math_over():
+                    break
+                else:
+                    self.board=Board()
+                    self._display_board()
 
     def display_move(self,player:Player):
         """
         Mostramos en pantalla, el nombre, caracter y el movimiento del juegador
         """
-        print(f'\n{player.name} ({player.char}) has moved in column {player.last_move}. ')
+        print(f'\n{player.name} ({player.char}) has moved in column {player.last_moves[0].position}. ')
 
-    def display_board(self):
+    def _display_board(self):
         """
         Se utliza la libreria beautifultable para poder mostrar la tabla y sea agradable a la mista del jugador
         """
@@ -125,7 +130,7 @@ class Game:
         bt.columns.header = [str(i) for i in range(BOARD_COLUMNS)]
         print(bt)
 
-    def display_result(self):
+    def _display_result(self):
         """
         Imprime el nombre y caracter del ganador y en caso que sea un empate
         """
@@ -135,7 +140,7 @@ class Game:
         else:
             print(f'\nA tie between {self.match.get_player("x").name} and {self.match.get_player("x").name}')
 
-    def _is_game_over(self):
+    def _has_winner_or_tie(self):
 
         """
         El juego se acaba cuando hay vencedor o empate
@@ -144,12 +149,15 @@ class Game:
         result = False
         winner = self.match.get_winner(self.board)
         if winner != None:
+            winner.on_win()
+            winner.opponent.on_lose()
             result = True
         elif self.board.is_full():
             result = True
 
         return result
     
+
     def _get_difficulty_level(self):
         """
         pregunta la humanos que nivel de deficulta quiere, esto indica que tan inteligente sera la maquina
